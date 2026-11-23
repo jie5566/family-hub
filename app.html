@@ -42,8 +42,8 @@ textarea { min-height: 52px; resize: vertical; }
 .day { padding: 16px 0; border-bottom: 1px solid #d8d6cf; display: grid; gap: 10px; }
 .day b { font-size: 15px; letter-spacing: .06em; }
 nav { position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--line);
-  display: grid; grid-template-columns: repeat(5, 1fr); padding-bottom: env(safe-area-inset-bottom); }
-nav button { background: none; border: 0; font: inherit; font-size: 14px; letter-spacing: .06em; padding: 18px 0; color: var(--mute); }
+  display: grid; grid-template-columns: repeat(6, 1fr); padding-bottom: env(safe-area-inset-bottom); }
+nav button { background: none; border: 0; font: inherit; font-size: 13px; letter-spacing: .02em; padding: 18px 0; color: var(--mute); }
 nav button.on { color: var(--ink); font-weight: 600; }
 .toast { position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%); background: var(--ink); color: var(--paper);
   padding: 10px 18px; border-radius: 999px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
@@ -54,6 +54,7 @@ nav button.on { color: var(--ink); font-weight: 600; }
 .grid button { position: absolute; right: 6px; top: 6px; background: rgba(17,17,17,.75); color: #fff; border: 0; border-radius: 999px; font: inherit; font-size: 12px; padding: 4px 10px; }
 .upload { display: block; text-align: center; background: var(--ink); color: var(--paper); font-weight: 600; padding: 14px 20px; border-radius: 999px; }
 .upload input { display: none; }
+.done-note { opacity: .45; text-decoration: line-through; }
 .empty { color: var(--mute); padding: 24px 0; }
 code { font-size: 13px; word-break: break-all; background: #fff; padding: 10px; display: block; border-radius: 8px; border: 1px solid #cfccc4; }
 </style>
@@ -72,18 +73,18 @@ code { font-size: 13px; word-break: break-all; background: #fff; padding: 10px; 
 <script src="i18n.js"></script>
 <script>
 const UI = {
-  zh: { tabs: ['冰箱', '课表', '接送', '图库', '设置'], upload: '上传水墨画', uploading: '上传中…', galleryHint: '会自动转成黑白、裁成 Kindle 竖屏；Kindle 闲置时轮流显示。', galleryEmpty: '还没有画，先用默认的那张。', del: '删除', add: '添加食材', name: '名称', category: '类别', expires: '保质期到', estimated: '没有印日期（估计）',
+  zh: { tabs: ['留言', '冰箱', '课表', '接送', '图库', '设置'], noteText: '留言，比如“记得写作业”', noteFrom: '谁写的', noteUntil: '显示到', untilToday: '今天', untilTomorrow: '明天', untilDone: '一直，直到完成', send: '发到 Kindle', doneBtn: '完成', restore: '恢复', notesNow: '正在显示', notesDone: '已完成', noNotes: '还没有留言', upload: '上传水墨画', uploading: '上传中…', galleryHint: '会自动转成黑白、裁成 Kindle 竖屏；Kindle 闲置时轮流显示。', galleryEmpty: '还没有画，先用默认的那张。', del: '删除', add: '添加食材', name: '名称', category: '类别', expires: '保质期到', estimated: '没有印日期（估计）',
         save: '保存', done: '吃完了', saved: '已保存', removed: '已删除', kid: '孩子', start: '上学', end: '放学', classes: '课程（可换行）', activity: '课外班，如“16:30 游泳”',
         dropoff: '早上送', pickup: '下午接', note: '备注，如“爸爸今天不行”', members: '家庭成员', parent: '家长', child: '孩子',
         defaults: '默认接送', kindleLang: 'Kindle 默认语言', kindleLink: 'Kindle 打开这个地址', copy: '复制', copied: '已复制',
         noKey: '', keyLabel: '家庭钥匙', defaultHint: '留空 = 默认', items: '冰箱里' },
-  en: { tabs: ['Fridge', 'Classes', 'Rides', 'Gallery', 'Settings'], upload: 'Upload paintings', uploading: 'Uploading…', galleryHint: 'Turned grayscale and cropped to the Kindle screen; shown in turn when the Kindle is idle.', galleryEmpty: 'No paintings yet – the default one is shown.', del: 'Delete', add: 'Add food', name: 'Name', category: 'Category', expires: 'Best before',
+  en: { tabs: ['Notes', 'Fridge', 'Classes', 'Rides', 'Gallery', 'Settings'], noteText: 'Note, e.g. "Homework first!"', noteFrom: 'From', noteUntil: 'Show until', untilToday: 'Today', untilTomorrow: 'Tomorrow', untilDone: 'Until done', send: 'Send to Kindle', doneBtn: 'Done', restore: 'Restore', notesNow: 'On the Kindle', notesDone: 'Done', noNotes: 'No notes yet', upload: 'Upload paintings', uploading: 'Uploading…', galleryHint: 'Turned grayscale and cropped to the Kindle screen; shown in turn when the Kindle is idle.', galleryEmpty: 'No paintings yet – the default one is shown.', del: 'Delete', add: 'Add food', name: 'Name', category: 'Category', expires: 'Best before',
         estimated: 'No printed date (estimate)', save: 'Save', done: 'Eaten', saved: 'Saved', removed: 'Removed', kid: 'Child',
         start: 'Start', end: 'End', classes: 'Classes (one per line)', activity: 'After school, e.g. "16:30 Swimming"', dropoff: 'Drop-off', pickup: 'Pick-up',
         note: 'Note, e.g. "Dad can’t today"', members: 'Family', parent: 'Parent', child: 'Child', defaults: 'Default rides',
         kindleLang: 'Kindle default language', kindleLink: 'Open this on the Kindle', copy: 'Copy', copied: 'Copied',
         noKey: '', keyLabel: 'Family key', defaultHint: 'empty = default', items: 'In the fridge' },
-  sv: { tabs: ['Kyl', 'Schema', 'Skjuts', 'Bilder', 'Inst.'], upload: 'Ladda upp målningar', uploading: 'Laddar upp…', galleryHint: 'Blir gråskala och beskärs till Kindlens skärm; visas i tur och ordning när Kindlen vilar.', galleryEmpty: 'Inga målningar än – standardbilden visas.', del: 'Ta bort', add: 'Lägg till', name: 'Namn', category: 'Kategori', expires: 'Bäst före',
+  sv: { tabs: ['Lappar', 'Kyl', 'Schema', 'Skjuts', 'Bilder', 'Inst.'], noteText: 'Lapp, t.ex. "Läxor först!"', noteFrom: 'Från', noteUntil: 'Visa till', untilToday: 'Idag', untilTomorrow: 'Imorgon', untilDone: 'Tills klart', send: 'Skicka till Kindle', doneBtn: 'Klart', restore: 'Ångra', notesNow: 'På Kindlen', notesDone: 'Klara', noNotes: 'Inga lappar än', upload: 'Ladda upp målningar', uploading: 'Laddar upp…', galleryHint: 'Blir gråskala och beskärs till Kindlens skärm; visas i tur och ordning när Kindlen vilar.', galleryEmpty: 'Inga målningar än – standardbilden visas.', del: 'Ta bort', add: 'Lägg till', name: 'Namn', category: 'Kategori', expires: 'Bäst före',
         estimated: 'Inget datum (uppskattat)', save: 'Spara', done: 'Uppätet', saved: 'Sparat', removed: 'Borttaget', kid: 'Barn',
         start: 'Börjar', end: 'Slutar', classes: 'Lektioner (en per rad)', activity: 'Efter skolan, t.ex. "16:30 Simning"', dropoff: 'Lämnar', pickup: 'Hämtar',
         note: 'Anteckning, t.ex. "Pappa kan inte idag"', members: 'Familj', parent: 'Förälder', child: 'Barn', defaults: 'Standard skjuts',
@@ -97,7 +98,7 @@ if (token) localStorage.setItem('hubToken', token);
 token = token || localStorage.getItem('hubToken') || '';
 
 let lang = localStorage.getItem('hubAppLang') || 'zh';
-let tab = +(localStorage.getItem('hubAppTab') || 0);
+let tab = +(localStorage.getItem('hubAppTab2') || 0);
 let data = null, kidSel = null;
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -128,10 +129,42 @@ function render() {
     return;
   }
   if (!data) { $('main').innerHTML = ''; return; }
-  [renderFridge, renderClasses, renderRides, renderGallery, renderSettings][tab]();
+  [renderNotes, renderFridge, renderClasses, renderRides, renderGallery, renderSettings][tab]();
 }
 function setLang(l) { lang = l; localStorage.setItem('hubAppLang', l); render(); }
-function setTab(i) { tab = i; localStorage.setItem('hubAppTab', i); window.scrollTo(0, 0); render(); }
+function setTab(i) { tab = i; localStorage.setItem('hubAppTab2', i); window.scrollTo(0, 0); render(); }
+
+// ---------- Notes ----------
+function renderNotes() {
+  const parents = data.members.filter((m) => m.role === 'parent').map((m) => m.name);
+  const me = localStorage.getItem('hubMe') || parents[0] || '';
+  const notes = data.notes || [], open = notes.filter((n) => !n.done), done = notes.filter((n) => n.done);
+  const row = (n) => `<div class="row"><div><div class="name ${n.done ? 'done-note' : ''}">${esc(n.text)}</div>
+      <div class="meta">${esc(n.author || '')}${n.until ? ' · ' + n.until.slice(5).replace('-', '/') : ''}</div></div>
+      <div style="display:flex;gap:8px">${n.done ? `<button class="act" onclick="noteDone('${n.id}', false)">${U().restore}</button>`
+        : `<button class="act" onclick="noteDone('${n.id}', true)">${U().doneBtn}</button>`}
+      <button class="act" onclick="noteRemove('${n.id}')">×</button></div></div>`;
+  $('main').innerHTML = `
+    <form onsubmit="addNote(event)">
+      <textarea id="nText" maxlength="200" required placeholder="${esc(U().noteText)}" style="min-height:84px;font-size:18px"></textarea>
+      <div class="two">
+        <label class="f">${U().noteFrom}<select id="nFrom">${parents.map((p) => `<option ${p === me ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select></label>
+        <label class="f">${U().noteUntil}<select id="nUntil"><option value="0">${U().untilToday}</option><option value="1">${U().untilTomorrow}</option><option value="">${U().untilDone}</option></select></label>
+      </div>
+      <button class="primary">${U().send}</button>
+    </form>
+    <div class="label">${U().notesNow} · ${open.length}</div>
+    ${open.length ? open.map(row).join('') : `<p class="empty">${U().noNotes}</p>`}
+    ${done.length ? `<div class="label">${U().notesDone}</div>` + done.map(row).join('') : ''}`;
+}
+async function addNote(e) {
+  e.preventDefault();
+  const u = $('nUntil').value; localStorage.setItem('hubMe', $('nFrom').value);
+  await rpc('hub_note_add', { p_text: $('nText').value.trim(), p_author: $('nFrom').value, p_until: u === '' ? null : plusDays(+u) });
+  toast(U().saved); await reload();
+}
+async function noteDone(id, done) { await rpc('hub_note_done', { p_id: id, p_done: done }); await reload(); }
+async function noteRemove(id) { await rpc('hub_note_remove', { p_id: id }); toast(U().removed); await reload(); }
 
 // ---------- Fridge ----------
 function plusDays(n) { const d = new Date(); d.setDate(d.getDate() + n); return ymd(d); }
@@ -229,7 +262,7 @@ let paintings = null;
 async function renderGallery() {
   const head = `<label class="upload"><span id="upLabel">${U().upload}</span><input type="file" accept="image/*" multiple onchange="uploadPaintings(this.files)"></label>
     <p class="meta" style="color:var(--mute);font-size:14px;margin:12px 0 0">${U().galleryHint}</p>`;
-  if (!paintings) { $('main').innerHTML = head; paintings = await rpc('hub_paintings', {}); if (tab !== 3) return; }
+  if (!paintings) { $('main').innerHTML = head; paintings = await rpc('hub_paintings', {}); if (tab !== 4) return; }
   $('main').innerHTML = head + (paintings.length ? `<div class="grid">${paintings.map((p) =>
     `<figure><img src="${p.thumb}" alt=""><button onclick="removePainting('${p.id}')">${U().del}</button></figure>`).join('')}</div>`
     : `<p class="empty">${U().galleryEmpty}</p>`);

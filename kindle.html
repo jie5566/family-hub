@@ -44,6 +44,9 @@ td { padding: 0; vertical-align: top; }
 .r { text-align: right; }
 .est { font-size: 18px; margin-left: 8px; }
 .sum { font-size: 23px; margin: 8px 0 4px; }
+.note { background: #000; color: #fff; padding: 18px 24px; margin-top: 14px; font-size: 31px; font-weight: 600; line-height: 42px; }
+.note .by { font-size: 20px; font-weight: 400; margin-left: 12px; }
+#idleNotes { position: absolute; left: 44px; right: 110px; bottom: 40px; }
 #idle { display: none; position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: #fff center center no-repeat; -webkit-background-size: cover; background-size: cover; }
 #idleClock { position: absolute; left: 44px; top: 48px; }
 #idleTime { font-size: 64px; font-weight: 300; }
@@ -61,11 +64,13 @@ td { padding: 0; vertical-align: top; }
     <td class="meta"><span id="date"></span><span class="lang" id="lang"></span></td>
   </tr></table>
   <div id="err"></div>
+  <div id="notes"></div>
   <div id="view-family"></div>
   <div id="view-fridge" style="display:none"></div>
 </div>
 <div id="idle" onclick="wake()">
   <div id="idleClock"><div id="idleTime"></div><div id="idleDate"></div></div>
+  <div id="idleNotes"></div>
   <img id="logo" src="logo.png" alt="">
 </div>
 
@@ -152,8 +157,25 @@ function render() {
   setProp('tab-fridge', 'className', tab === 'fridge' ? 'on' : '');
   setDisplay('view-family', tab === 'family' ? 'block' : 'none');
   setDisplay('view-fridge', tab === 'fridge' ? 'block' : 'none');
+  renderNotes();
   if (tab === 'family') renderFamily(now, L); else renderFridge(L);
   renderIdleClock(now, L);
+}
+
+// Parents' notes: big black boxes on every screen; tapping one marks it done
+function renderNotes() {
+  var h = '', hi = '', list = (data && data.notes) || [], n = 0;
+  for (var i = 0; i < list.length && n < 3; i++) {
+    if (list[i].done) continue; n++;
+    var box = esc(list[i].text) + (list[i].author ? '<span class="by">— ' + esc(list[i].author) + '</span>' : '');
+    h += '<div class="note" onclick="noteDone(\'' + list[i].id + '\')">' + box + '</div>';
+    hi += '<div class="note">' + box + '</div>';
+  }
+  put('notes', h ? '<div style="margin-top:22px">' + h + '</div>' : '');
+  put('idleNotes', hi);
+}
+function noteDone(id) {
+  xhr('POST', HUB_CONFIG.supabaseUrl + '/rest/v1/rpc/hub_note_done', { p_token: token, p_id: id, p_done: true }, function () { load(); });
 }
 
 // After 17:00 the family tab looks ahead to tomorrow
