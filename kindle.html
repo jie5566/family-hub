@@ -26,6 +26,8 @@ td { padding: 0; vertical-align: top; }
 .kidcls { font-size: 16px; line-height: 28px; margin-top: 10px; }
 .ride { font-size: 21px; padding: 10px 0; }
 .ride .who { text-align: right; font-weight: 600; }
+.home { display: inline-block; margin-top: 18px; border: 1px solid #000; padding: 12px 20px; font-size: 18px; color: #000; text-decoration: none; }
+.home.on { background: #000; color: #fff; }
 .inv { background: #000; color: #fff; padding: 4px 12px; }
 .h1 { font-size: 52px; font-weight: 300; letter-spacing: 2px; }
 .blk { background: #000; color: #fff; padding: 4px 22px; margin-top: 12px; }
@@ -107,6 +109,10 @@ function load() {
     });
 }
 
+function checkin(id) {
+  xhr('POST', HUB_CONFIG.supabaseUrl + '/rest/v1/rpc/hub_checkin_toggle', { p_token: token, p_member: id }, function () { load(); });
+}
+
 function setLang(l) { lang = l; langLocked = true; try { localStorage.setItem('hubLang', l); } catch (e) {} render(); }
 function showTab(name) { tab = name; render(); }
 
@@ -167,6 +173,10 @@ function renderFamily(now, L) {
       } else {
         h += '<div class="kidtime">' + L.noSchool + '</div>';
       }
+      var ci = null;
+      for (var z = 0; z < (data.checkins || []).length; z++) if (data.checkins[z].member_id === kids[k].id) ci = data.checkins[z];
+      h += '<a class="home' + (ci ? ' on' : '') + '" href="javascript:checkin(\'' + kids[k].id + '\')">' +
+        (ci ? t(lang, 'homeAt', { t: ci.time }) : L.homeBtn) + '</a>';
       h += '</td>';
     }
     h += '</tr></table><div class="rule"></div>';

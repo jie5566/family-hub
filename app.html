@@ -181,7 +181,12 @@ async function saveClasses() {
 function renderRides() {
   const parents = data.members.filter((m) => m.role === 'parent').map((m) => m.name);
   const wd = I18N[lang].wd, s = data.settings;
-  let html = `<datalist id="ppl">${parents.map((p) => `<option value="${esc(p)}">`).join('')}</datalist>`;
+  const L = I18N[lang];
+  let html = `<div class="label" style="margin-top:0">${L.homeToday}</div>` + data.members.filter((m) => m.role === 'kid').map((k) => {
+    const c = (data.checkins || []).find((x) => x.member_id === k.id);
+    return `<div class="row"><span class="name">${esc(k.name)}</span>${c ? `<span class="hot">${t(lang, 'homeAt', { t: c.time })}</span>` : `<span class="meta">${L.notHome}</span>`}</div>`;
+  }).join('') + `<div style="height:20px"></div>`;
+  html += `<datalist id="ppl">${parents.map((p) => `<option value="${esc(p)}">`).join('')}</datalist>`;
   for (let i = 0; i < 7; i++) {
     const d = new Date(); d.setDate(d.getDate() + i); const day = ymd(d);
     const get = (k) => data.duties.find((x) => x.day === day && x.kind === k) || {};
@@ -233,6 +238,7 @@ async function saveSettings() {
   toast(U().saved); await reload();
 }
 
+document.addEventListener('visibilitychange', () => { if (!document.hidden && token) reload().catch(() => {}); });
 render();
 if (token) reload().catch((e) => { $('main').innerHTML = `<p class="empty">${esc(e.message)}</p>`; });
 </script>
