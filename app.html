@@ -86,7 +86,7 @@ const UI = {
 };
 
 // Key: from #k=… on first open, then remembered on this phone
-let token = (location.hash.match(/k=([0-9a-f]+)/) || [])[1];
+let token = (location.hash.match(/k=([0-9a-z]+)/) || [])[1];
 if (token) { localStorage.setItem('hubToken', token); history.replaceState(null, '', location.pathname); }
 token = token || localStorage.getItem('hubToken') || '';
 

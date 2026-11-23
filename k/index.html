@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>Family Hub</title></head>
+<body>
+<script>
+// Short Kindle address: .../family-hub/k#KEY  ->  kindle.html#k=KEY
+var key = location.hash.replace(/^#(k=)?/, '');
+location.replace('../kindle.html' + (key ? '#k=' + key : ''));
+</script>
+</body></html>

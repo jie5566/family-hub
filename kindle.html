@@ -71,7 +71,9 @@ td { padding: 0; vertical-align: top; }
 <script src="i18n.js"></script>
 <script src="gallery/list.js"></script>
 <script>
-var token = (location.hash.match(/k=([0-9a-f]+)/) || [])[1] || '';
+var token = (location.hash.match(/k=([0-9a-z]+)/) || [])[1] || '';
+// Remember the key, so a plain bookmark of kindle.html keeps working
+try { if (token) localStorage.setItem('hubToken', token); else token = localStorage.getItem('hubToken') || ''; } catch (e) {}
 var lang = 'zh', langLocked = false, tab = 'family', data = null, weather = null;
 var lastTouch = new Date().getTime(), idle = false, galleryIdx = 0;
 try { var saved = localStorage.getItem('hubLang'); if (saved) { lang = saved; langLocked = true; } } catch (e) {}
