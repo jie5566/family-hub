@@ -42,12 +42,18 @@ textarea { min-height: 52px; resize: vertical; }
 .day { padding: 16px 0; border-bottom: 1px solid #d8d6cf; display: grid; gap: 10px; }
 .day b { font-size: 15px; letter-spacing: .06em; }
 nav { position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--line);
-  display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom); }
-nav button { background: none; border: 0; font: inherit; font-size: 15px; letter-spacing: .1em; padding: 18px 0; color: var(--mute); }
+  display: grid; grid-template-columns: repeat(5, 1fr); padding-bottom: env(safe-area-inset-bottom); }
+nav button { background: none; border: 0; font: inherit; font-size: 14px; letter-spacing: .06em; padding: 18px 0; color: var(--mute); }
 nav button.on { color: var(--ink); font-weight: 600; }
 .toast { position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%); background: var(--ink); color: var(--paper);
   padding: 10px 18px; border-radius: 999px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
 .toast.show { opacity: 1; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+.grid figure { margin: 0; position: relative; }
+.grid img { width: 100%; aspect-ratio: 1072 / 1448; object-fit: cover; display: block; border-radius: 6px; background: #e9e7e1; }
+.grid button { position: absolute; right: 6px; top: 6px; background: rgba(17,17,17,.75); color: #fff; border: 0; border-radius: 999px; font: inherit; font-size: 12px; padding: 4px 10px; }
+.upload { display: block; text-align: center; background: var(--ink); color: var(--paper); font-weight: 600; padding: 14px 20px; border-radius: 999px; }
+.upload input { display: none; }
 .empty { color: var(--mute); padding: 24px 0; }
 code { font-size: 13px; word-break: break-all; background: #fff; padding: 10px; display: block; border-radius: 8px; border: 1px solid #cfccc4; }
 </style>
@@ -66,18 +72,18 @@ code { font-size: 13px; word-break: break-all; background: #fff; padding: 10px; 
 <script src="i18n.js"></script>
 <script>
 const UI = {
-  zh: { tabs: ['冰箱', '课表', '接送', '设置'], add: '添加食材', name: '名称', category: '类别', expires: '保质期到', estimated: '没有印日期（估计）',
+  zh: { tabs: ['冰箱', '课表', '接送', '图库', '设置'], upload: '上传水墨画', uploading: '上传中…', galleryHint: '会自动转成黑白、裁成 Kindle 竖屏；Kindle 闲置时轮流显示。', galleryEmpty: '还没有画，先用默认的那张。', del: '删除', add: '添加食材', name: '名称', category: '类别', expires: '保质期到', estimated: '没有印日期（估计）',
         save: '保存', done: '吃完了', saved: '已保存', removed: '已删除', kid: '孩子', start: '上学', end: '放学', classes: '课程（可换行）', activity: '课外班，如“16:30 游泳”',
         dropoff: '早上送', pickup: '下午接', note: '备注，如“爸爸今天不行”', members: '家庭成员', parent: '家长', child: '孩子',
         defaults: '默认接送', kindleLang: 'Kindle 默认语言', kindleLink: 'Kindle 打开这个地址', copy: '复制', copied: '已复制',
         noKey: '', keyLabel: '家庭钥匙', defaultHint: '留空 = 默认', items: '冰箱里' },
-  en: { tabs: ['Fridge', 'Classes', 'Rides', 'Settings'], add: 'Add food', name: 'Name', category: 'Category', expires: 'Best before',
+  en: { tabs: ['Fridge', 'Classes', 'Rides', 'Gallery', 'Settings'], upload: 'Upload paintings', uploading: 'Uploading…', galleryHint: 'Turned grayscale and cropped to the Kindle screen; shown in turn when the Kindle is idle.', galleryEmpty: 'No paintings yet – the default one is shown.', del: 'Delete', add: 'Add food', name: 'Name', category: 'Category', expires: 'Best before',
         estimated: 'No printed date (estimate)', save: 'Save', done: 'Eaten', saved: 'Saved', removed: 'Removed', kid: 'Child',
         start: 'Start', end: 'End', classes: 'Classes (one per line)', activity: 'After school, e.g. "16:30 Swimming"', dropoff: 'Drop-off', pickup: 'Pick-up',
         note: 'Note, e.g. "Dad can’t today"', members: 'Family', parent: 'Parent', child: 'Child', defaults: 'Default rides',
         kindleLang: 'Kindle default language', kindleLink: 'Open this on the Kindle', copy: 'Copy', copied: 'Copied',
         noKey: '', keyLabel: 'Family key', defaultHint: 'empty = default', items: 'In the fridge' },
-  sv: { tabs: ['Kyl', 'Schema', 'Skjuts', 'Inställn.'], add: 'Lägg till', name: 'Namn', category: 'Kategori', expires: 'Bäst före',
+  sv: { tabs: ['Kyl', 'Schema', 'Skjuts', 'Bilder', 'Inst.'], upload: 'Ladda upp målningar', uploading: 'Laddar upp…', galleryHint: 'Blir gråskala och beskärs till Kindlens skärm; visas i tur och ordning när Kindlen vilar.', galleryEmpty: 'Inga målningar än – standardbilden visas.', del: 'Ta bort', add: 'Lägg till', name: 'Namn', category: 'Kategori', expires: 'Bäst före',
         estimated: 'Inget datum (uppskattat)', save: 'Spara', done: 'Uppätet', saved: 'Sparat', removed: 'Borttaget', kid: 'Barn',
         start: 'Börjar', end: 'Slutar', classes: 'Lektioner (en per rad)', activity: 'Efter skolan, t.ex. "16:30 Simning"', dropoff: 'Lämnar', pickup: 'Hämtar',
         note: 'Anteckning, t.ex. "Pappa kan inte idag"', members: 'Familj', parent: 'Förälder', child: 'Barn', defaults: 'Standard skjuts',
@@ -122,7 +128,7 @@ function render() {
     return;
   }
   if (!data) { $('main').innerHTML = ''; return; }
-  [renderFridge, renderClasses, renderRides, renderSettings][tab]();
+  [renderFridge, renderClasses, renderRides, renderGallery, renderSettings][tab]();
 }
 function setLang(l) { lang = l; localStorage.setItem('hubAppLang', l); render(); }
 function setTab(i) { tab = i; localStorage.setItem('hubAppTab', i); window.scrollTo(0, 0); render(); }
@@ -217,6 +223,38 @@ async function saveRides() {
   }
   toast(U().saved); await reload();
 }
+
+// ---------- Gallery ----------
+let paintings = null;
+async function renderGallery() {
+  const head = `<label class="upload"><span id="upLabel">${U().upload}</span><input type="file" accept="image/*" multiple onchange="uploadPaintings(this.files)"></label>
+    <p class="meta" style="color:var(--mute);font-size:14px;margin:12px 0 0">${U().galleryHint}</p>`;
+  if (!paintings) { $('main').innerHTML = head; paintings = await rpc('hub_paintings', {}); if (tab !== 3) return; }
+  $('main').innerHTML = head + (paintings.length ? `<div class="grid">${paintings.map((p) =>
+    `<figure><img src="${p.thumb}" alt=""><button onclick="removePainting('${p.id}')">${U().del}</button></figure>`).join('')}</div>`
+    : `<p class="empty">${U().galleryEmpty}</p>`);
+}
+// Crop to the Kindle's portrait screen (cover), make it grayscale, encode as JPEG
+function toKindle(img, w, h, quality) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h);
+  const r = Math.max(w / img.naturalWidth, h / img.naturalHeight), dw = img.naturalWidth * r, dh = img.naturalHeight * r;
+  x.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  const d = x.getImageData(0, 0, w, h), p = d.data;
+  for (let i = 0; i < p.length; i += 4) { const g = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]; p[i] = p[i + 1] = p[i + 2] = g; }
+  x.putImageData(d, 0, 0);
+  return c.toDataURL('image/jpeg', quality);
+}
+async function uploadPaintings(files) {
+  $('upLabel').textContent = U().uploading;
+  for (const f of files) {
+    const img = new Image(); img.src = URL.createObjectURL(f); await img.decode();
+    await rpc('hub_painting_add', { p_thumb: toKindle(img, 216, 292, 0.7), p_image: toKindle(img, 1072, 1448, 0.82) });
+    URL.revokeObjectURL(img.src);
+  }
+  paintings = null; toast(U().saved); renderGallery();
+}
+async function removePainting(id) { await rpc('hub_painting_remove', { p_id: id }); paintings = null; toast(U().removed); renderGallery(); }
 
 // ---------- Settings ----------
 function renderSettings() {

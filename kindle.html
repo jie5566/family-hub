@@ -273,9 +273,15 @@ function renderIdleClock(now, L) {
   put('idleTime', weather ? Math.round(weather.current.temperature_2m) + '°' : '');
   put('idleDate', esc(L.date(now) + (weather ? ' · ' + L.wx[wxGroup(weather.current.weather_code)] : '')));
 }
+// Paintings uploaded from the phone (stored in the database) plus the built-in ones
 function showPainting() {
-  if (!window.GALLERY || !GALLERY.length) return;
-  $('idle').style.backgroundImage = 'url(' + GALLERY[galleryIdx % GALLERY.length] + ')';
+  var pool = (data && data.paintings && data.paintings.length) ? data.paintings : (window.GALLERY || []);
+  if (!pool.length) return;
+  var pick = pool[galleryIdx % pool.length];
+  if (pick.indexOf('-') < 0 || pick.indexOf('/') >= 0) { $('idle').style.backgroundImage = 'url(' + pick + ')'; return; }
+  xhr('POST', HUB_CONFIG.supabaseUrl + '/rest/v1/rpc/hub_painting_get', { p_token: token, p_id: pick }, function (err, img) {
+    if (!err && img) $('idle').style.backgroundImage = 'url(' + img + ')';
+  });
 }
 function sleepToPainting() {
   idle = true; galleryIdx = Math.floor(Math.random() * 1000);
