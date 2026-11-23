@@ -66,19 +66,19 @@ code { font-size: 13px; word-break: break-all; background: #fff; padding: 10px; 
 <script>
 const UI = {
   zh: { tabs: ['冰箱', '课表', '接送', '设置'], add: '添加食材', name: '名称', category: '类别', expires: '保质期到', estimated: '没有印日期（估计）',
-        save: '保存', done: '吃完了', saved: '已保存', removed: '已删除', kid: '孩子', start: '上学', end: '放学', classes: '课程（可换行）',
+        save: '保存', done: '吃完了', saved: '已保存', removed: '已删除', kid: '孩子', start: '上学', end: '放学', classes: '课程（可换行）', activity: '课外班，如“16:30 游泳”',
         dropoff: '早上送', pickup: '下午接', note: '备注，如“爸爸今天不行”', members: '家庭成员', parent: '家长', child: '孩子',
         defaults: '默认接送', kindleLang: 'Kindle 默认语言', kindleLink: 'Kindle 打开这个地址', copy: '复制', copied: '已复制',
         noKey: '请用带钥匙的链接打开：app.html#k=…', defaultHint: '留空 = 默认', items: '冰箱里' },
   en: { tabs: ['Fridge', 'Classes', 'Rides', 'Settings'], add: 'Add food', name: 'Name', category: 'Category', expires: 'Best before',
         estimated: 'No printed date (estimate)', save: 'Save', done: 'Eaten', saved: 'Saved', removed: 'Removed', kid: 'Child',
-        start: 'Start', end: 'End', classes: 'Classes (one per line)', dropoff: 'Drop-off', pickup: 'Pick-up',
+        start: 'Start', end: 'End', classes: 'Classes (one per line)', activity: 'After school, e.g. "16:30 Swimming"', dropoff: 'Drop-off', pickup: 'Pick-up',
         note: 'Note, e.g. "Dad can’t today"', members: 'Family', parent: 'Parent', child: 'Child', defaults: 'Default rides',
         kindleLang: 'Kindle default language', kindleLink: 'Open this on the Kindle', copy: 'Copy', copied: 'Copied',
         noKey: 'Open with your key link: app.html#k=…', defaultHint: 'empty = default', items: 'In the fridge' },
   sv: { tabs: ['Kyl', 'Schema', 'Skjuts', 'Inställn.'], add: 'Lägg till', name: 'Namn', category: 'Kategori', expires: 'Bäst före',
         estimated: 'Inget datum (uppskattat)', save: 'Spara', done: 'Uppätet', saved: 'Sparat', removed: 'Borttaget', kid: 'Barn',
-        start: 'Börjar', end: 'Slutar', classes: 'Lektioner (en per rad)', dropoff: 'Lämnar', pickup: 'Hämtar',
+        start: 'Börjar', end: 'Slutar', classes: 'Lektioner (en per rad)', activity: 'Efter skolan, t.ex. "16:30 Simning"', dropoff: 'Lämnar', pickup: 'Hämtar',
         note: 'Anteckning, t.ex. "Pappa kan inte idag"', members: 'Familj', parent: 'Förälder', child: 'Barn', defaults: 'Standard skjuts',
         kindleLang: 'Kindlens språk', kindleLink: 'Öppna detta på Kindlen', copy: 'Kopiera', copied: 'Kopierat',
         noKey: 'Öppna med din nyckellänk: app.html#k=…', defaultHint: 'tomt = standard', items: 'I kylskåpet' }
@@ -165,14 +165,15 @@ function renderClasses() {
     return `<div class="day"><b>${wd[d - 1]}</b>
       <div class="two"><label class="f">${U().start}<input type="time" id="s${d}" value="${(s.start_time || '').slice(0, 5)}"></label>
       <label class="f">${U().end}<input type="time" id="e${d}" value="${(s.end_time || '').slice(0, 5)}"></label></div>
-      <label class="f">${U().classes}<textarea id="c${d}">${esc(s.classes || '')}</textarea></label></div>`;
+      <label class="f">${U().classes}<textarea id="c${d}">${esc(s.classes || '')}</textarea></label>
+      <input id="a${d}" value="${esc(s.activity || '')}" placeholder="${esc(U().activity)}"></div>`;
   }).join('');
   $('main').innerHTML = `<div class="seg">${kids.map((k) => `<button class="${k.id === kidSel ? 'on' : ''}" onclick="kidSel='${k.id}';render()">${esc(k.name)}</button>`).join('')}</div>
     ${days}<button class="primary" onclick="saveClasses()">${U().save}</button>`;
 }
 async function saveClasses() {
   for (let d = 1; d <= 7; d++) {
-    await rpc('hub_schedule_save', { p_member: kidSel, p_weekday: d, p_start: $('s' + d).value || null, p_end: $('e' + d).value || null, p_classes: $('c' + d).value.trim() });
+    await rpc('hub_schedule_save', { p_member: kidSel, p_weekday: d, p_start: $('s' + d).value || null, p_end: $('e' + d).value || null, p_classes: $('c' + d).value.trim(), p_activity: $('a' + d).value.trim() });
   }
   toast(U().saved); await reload();
 }

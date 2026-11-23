@@ -23,6 +23,7 @@ td { padding: 0; vertical-align: top; }
 .wear { text-align: right; font-size: 21px; font-weight: 600; line-height: 34px; }
 .kidname { font-size: 25px; font-weight: 600; }
 .kidtime { font-size: 32px; font-weight: 300; margin-top: 10px; }
+.kidact { font-size: 17px; font-weight: 600; margin-top: 10px; line-height: 26px; }
 .kidcls { font-size: 16px; line-height: 28px; margin-top: 10px; }
 .ride { font-size: 21px; padding: 10px 0; }
 .ride .who { text-align: right; font-weight: 600; }
@@ -77,6 +78,11 @@ try { var saved = localStorage.getItem('hubLang'); if (saved) { lang = saved; la
 
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function $(id) { return document.getElementById(id); }
+// E-ink saves power when nothing redraws: only touch the DOM when the content really changed
+var shown = {};
+function setProp(id, k, v) { if ($(id)[k] !== v) $(id)[k] = v; }
+function setDisplay(id, v) { if ($(id).style.display !== v) $(id).style.display = v; }
+function put(id, html) { if (shown[id] !== html) { shown[id] = html; $(id).innerHTML = html; } }
 
 function xhr(method, url, body, cb) {
   var x = new XMLHttpRequest();
@@ -96,8 +102,8 @@ function xhr(method, url, body, cb) {
 function load() {
   if (!token) { $('err').innerHTML = 'Missing key: open kindle.html#k=YOUR_KEY'; return; }
   xhr('POST', HUB_CONFIG.supabaseUrl + '/rest/v1/rpc/hub_get', { p_token: token }, function (err, res) {
-    if (err) { $('err').innerHTML = '· offline ·'; return; }
-    $('err').innerHTML = '';
+    if (err) { put('err', '· offline ·'); return; }
+    put('err', '');
     data = res;
     if (!langLocked && res.settings && res.settings.lang) lang = res.settings.lang;
     render();
@@ -118,16 +124,16 @@ function showTab(name) { tab = name; render(); }
 
 function render() {
   var now = new Date(), L = I18N[lang];
-  $('date').innerHTML = esc(L.date(now));
+  put('date', esc(L.date(now)));
   var codes = [['zh', '中'], ['en', 'EN'], ['sv', 'SV']], h = '';
   for (var i = 0; i < codes.length; i++)
     h += '<a href="javascript:setLang(\'' + codes[i][0] + '\')"' + (codes[i][0] === lang ? ' class="on"' : '') + '>' + codes[i][1] + '</a>';
-  $('lang').innerHTML = h;
-  $('tab-family').innerHTML = L.family; $('tab-fridge').innerHTML = L.fridge;
-  $('tab-family').className = tab === 'family' ? 'on' : '';
-  $('tab-fridge').className = tab === 'fridge' ? 'on' : '';
-  $('view-family').style.display = tab === 'family' ? 'block' : 'none';
-  $('view-fridge').style.display = tab === 'fridge' ? 'block' : 'none';
+  put('lang', h);
+  put('tab-family', L.family); put('tab-fridge', L.fridge);
+  setProp('tab-family', 'className', tab === 'family' ? 'on' : '');
+  setProp('tab-fridge', 'className', tab === 'fridge' ? 'on' : '');
+  setDisplay('view-family', tab === 'family' ? 'block' : 'none');
+  setDisplay('view-fridge', tab === 'fridge' ? 'block' : 'none');
   if (tab === 'family') renderFamily(now, L); else renderFridge(L);
   renderIdleClock(now, L);
 }
@@ -173,6 +179,7 @@ function renderFamily(now, L) {
       } else {
         h += '<div class="kidtime">' + L.noSchool + '</div>';
       }
+      if (s && s.activity) h += '<div class="kidact">' + L.after + ' · ' + esc(s.activity).replace(/\n/g, '<br>') + '</div>';
       var ci = null;
       for (var z = 0; z < (data.checkins || []).length; z++) if (data.checkins[z].member_id === kids[k].id) ci = data.checkins[z];
       h += '<a class="home' + (ci ? ' on' : '') + '" href="javascript:checkin(\'' + kids[k].id + '\')">' +
@@ -194,11 +201,11 @@ function renderFamily(now, L) {
     }
     h += '</table>';
   }
-  $('view-family').innerHTML = h;
+  put('view-family', h);
 }
 
 function renderFridge(L) {
-  if (!data) { $('view-fridge').innerHTML = ''; return; }
+  if (!data) { put('view-fridge', ''); return; }
   var today = data.today, urgent = [], soon = [], later = [];
   for (var i = 0; i < data.fridge.length; i++) {
     var f = data.fridge[i], n = daysBetween(today, f.expires);
@@ -243,15 +250,14 @@ function renderFridge(L) {
     h += '</tr></table>';
     if (later.length > max) h += '<div class="label" style="margin-top:8px">' + t(lang, 'more', { n: later.length - max }) + '</div>';
   }
-  $('view-fridge').innerHTML = h;
+  put('view-fridge', h);
 }
 
 // ---- Idle ink painting ----
+// No ticking clock on the idle screen: a minute clock would redraw the e-ink 1,440 times a day
 function renderIdleClock(now, L) {
-  var m = now.getMinutes();
-  $('idleTime').innerHTML = now.getHours() + ':' + (m < 10 ? '0' : '') + m;
-  var w = weather ? ' · ' + Math.round(weather.current.temperature_2m) + '° ' + L.wx[wxGroup(weather.current.weather_code)] : '';
-  $('idleDate').innerHTML = esc(L.date(now) + w);
+  put('idleTime', weather ? Math.round(weather.current.temperature_2m) + '°' : '');
+  put('idleDate', esc(L.date(now) + (weather ? ' · ' + L.wx[wxGroup(weather.current.weather_code)] : '')));
 }
 function showPainting() {
   if (!window.GALLERY || !GALLERY.length) return;
@@ -265,20 +271,38 @@ function sleepToPainting() {
 function wake() {
   idle = false; lastTouch = new Date().getTime();
   $('idle').style.display = 'none';
+  lastLoad = new Date().getTime();
   load();
 }
 function touched() { lastTouch = new Date().getTime(); }
 document.addEventListener('touchstart', touched, false);
 document.addEventListener('click', touched, false);
 
-var tick = 0;
+function minutesOf(hhmm) { var p = hhmm.split(':'); return +p[0] * 60 + +p[1]; }
+function refreshEvery(now) {
+  var m = now.getHours() * 60 + now.getMinutes(), w = HUB_CONFIG.activeWindows;
+  for (var i = 0; i < w.length; i++) if (m >= minutesOf(w[i][0]) && m < minutesOf(w[i][1])) return HUB_CONFIG.activeRefreshMinutes;
+  if (m >= minutesOf(w[0][1]) && m < minutesOf(w[w.length - 1][0])) return HUB_CONFIG.dayRefreshMinutes;
+  return 0; // night: no fetching
+}
+// A black flash clears e-ink ghosting; done when each active window starts
+function clearGhosting() {
+  var f = document.createElement('div');
+  f.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;background:#000;z-index:99';
+  document.body.appendChild(f);
+  setTimeout(function () { document.body.removeChild(f); }, 600);
+}
+
+var lastLoad = new Date().getTime(), lastPainting = lastLoad, lastEvery = -1;
 setInterval(function () {
-  tick++;
-  var now = new Date();
-  if (!idle && now.getTime() - lastTouch > HUB_CONFIG.idleMinutes * 60000) sleepToPainting();
-  if (idle && tick % HUB_CONFIG.galleryMinutes === 0) { galleryIdx++; showPainting(); }
-  if (tick % HUB_CONFIG.refreshMinutes === 0) load(); else render();
-  if (tick >= 360) location.reload(); // full reload every 6 h keeps the old browser healthy
+  var now = new Date(), ms = now.getTime(), every = refreshEvery(now);
+  if (!idle && ms - lastTouch > HUB_CONFIG.idleMinutes * 60000) sleepToPainting();
+  if (every === HUB_CONFIG.activeRefreshMinutes && lastEvery !== every) clearGhosting();
+  lastEvery = every;
+  if (every && ms - lastLoad >= every * 60000) { lastLoad = ms; load(); }
+  else render(); // cheap: only redraws if the date or tab text changed
+  if (idle && every && ms - lastPainting >= HUB_CONFIG.galleryMinutes * 60000) { lastPainting = ms; galleryIdx++; showPainting(); }
+  if (now.getHours() === 3 && now.getMinutes() === 0) location.reload(); // once a night keeps the old browser healthy
 }, 60000);
 
 load();
