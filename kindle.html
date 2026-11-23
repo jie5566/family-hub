@@ -40,6 +40,7 @@ td { padding: 0; vertical-align: top; }
 #idle { display: none; position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: #fff center center no-repeat; -webkit-background-size: cover; background-size: cover; }
 #idleClock { position: absolute; left: 52px; top: 56px; }
 #idleTime { font-size: 44px; font-weight: 300; }
+#logo { position: absolute; right: 52px; bottom: 48px; height: 30px; }
 #err { font-size: 14px; color: #000; padding-top: 6px; }
 </style>
 </head>
@@ -60,6 +61,7 @@ td { padding: 0; vertical-align: top; }
 </tr></table></div>
 <div id="idle" onclick="wake()">
   <div id="idleClock"><div id="idleTime"></div><div class="small" id="idleDate"></div></div>
+  <img id="logo" src="logo.png" alt="">
 </div>
 
 <script src="config.js"></script>
