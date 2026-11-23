@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow"><title>Family Hub</title>
+<style>body{font-family:'Avenir Next',Avenir,sans-serif;background:#F5F4F0;color:#111;padding:48px 28px;max-width:560px;margin:auto}a{color:#111}</style>
+</head><body>
+<h1 style="font-weight:300">Family Hub</h1>
+<p><a id="app" href="app.html">手机 · Phone · Telefon</a></p>
+<p><a id="kindle" href="kindle.html">Kindle</a></p>
+<script>
+// Carry the key from the address (#k=...) to whichever page is chosen
+if (location.hash) { document.getElementById('app').href += location.hash; document.getElementById('kindle').href += location.hash; }
+</script>
+</body></html>

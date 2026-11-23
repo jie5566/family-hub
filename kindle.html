@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Family Hub</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito+Sans:300,400,600&amp;display=swap">
+<style>
+/* Written for the old Kindle WebKit: no flexbox, no grid, no gap. Tables and floats only. */
+html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+body { font-family: 'Nunito Sans', 'Avenir Next', 'Avenir', 'Helvetica Neue', 'STHeiti', 'Noto Sans SC', sans-serif; -webkit-text-size-adjust: none; }
+#hub { padding: 44px 52px 0; }
+table { border-collapse: collapse; width: 100%; }
+td { padding: 0; vertical-align: top; }
+.small { font-size: 14px; letter-spacing: 3px; }
+.label { font-size: 13px; letter-spacing: 3px; color: #333; }
+.rule { height: 0; border-top: 1px solid #000; margin: 36px 0 32px; }
+.lang a { color: #444; text-decoration: none; margin-left: 16px; font-size: 15px; padding: 6px 2px; }
+.lang a.on { color: #000; font-weight: 600; border-bottom: 2px solid #000; }
+.temp { font-size: 108px; font-weight: 300; line-height: 96px; letter-spacing: -3px; }
+.wx { font-size: 18px; margin-top: 10px; }
+.wear { text-align: right; font-size: 21px; font-weight: 600; line-height: 34px; }
+.kidname { font-size: 25px; font-weight: 600; }
+.kidtime { font-size: 32px; font-weight: 300; margin-top: 10px; }
+.kidcls { font-size: 16px; line-height: 28px; margin-top: 10px; }
+.ride { font-size: 21px; padding: 10px 0; }
+.ride .who { text-align: right; font-weight: 600; }
+.inv { background: #000; color: #fff; padding: 4px 12px; }
+.h1 { font-size: 52px; font-weight: 300; letter-spacing: 2px; }
+.blk { background: #000; color: #fff; padding: 4px 22px; margin-top: 12px; }
+.blk td { font-size: 23px; padding: 12px 0; }
+.row td { font-size: 21px; padding: 12px 0; border-bottom: 1px solid #000; }
+.row2 td { font-size: 17px; padding: 9px 0; }
+.r { text-align: right; }
+.est { font-size: 14px; margin-left: 6px; }
+#tabs { position: fixed; left: 52px; right: 52px; bottom: 0; background: #fff; border-top: 1px solid #000; }
+#tabs td { text-align: center; font-size: 18px; letter-spacing: 3px; padding: 20px 0 26px; color: #444; }
+#tabs td.on { color: #000; font-weight: 600; }
+#idle { display: none; position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: #fff center center no-repeat; -webkit-background-size: cover; background-size: cover; }
+#idleClock { position: absolute; left: 52px; top: 56px; }
+#idleTime { font-size: 44px; font-weight: 300; }
+#err { font-size: 14px; color: #000; padding-top: 6px; }
+</style>
+</head>
+<body>
+<div id="hub">
+  <table><tr>
+    <td class="small" id="date"></td>
+    <td class="lang r" id="lang"></td>
+  </tr></table>
+  <div id="err"></div>
+  <div id="view-family"></div>
+  <div id="view-fridge" style="display:none"></div>
+  <div style="height:120px"></div>
+</div>
+<div id="tabs"><table><tr>
+  <td id="tab-family" onclick="showTab('family')"></td>
+  <td id="tab-fridge" onclick="showTab('fridge')"></td>
+</tr></table></div>
+<div id="idle" onclick="wake()">
+  <div id="idleClock"><div id="idleTime"></div><div class="small" id="idleDate"></div></div>
+</div>
+
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="gallery/list.js"></script>
+<script>
+var token = (location.hash.match(/k=([0-9a-f]+)/) || [])[1] || '';
+var lang = 'zh', langLocked = false, tab = 'family', data = null, weather = null;
+var lastTouch = new Date().getTime(), idle = false, galleryIdx = 0;
+try { var saved = localStorage.getItem('hubLang'); if (saved) { lang = saved; langLocked = true; } } catch (e) {}
+
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function $(id) { return document.getElementById(id); }
+
+function xhr(method, url, body, cb) {
+  var x = new XMLHttpRequest();
+  x.open(method, url, true);
+  if (body) {
+    x.setRequestHeader('Content-Type', 'application/json');
+    x.setRequestHeader('apikey', HUB_CONFIG.supabaseKey);
+  }
+  x.onreadystatechange = function () {
+    if (x.readyState !== 4) return;
+    if (x.status >= 200 && x.status < 300) { try { cb(null, JSON.parse(x.responseText)); } catch (e) { cb(e); } }
+    else cb(new Error('HTTP ' + x.status));
+  };
+  x.send(body ? JSON.stringify(body) : null);
+}
+
+function load() {
+  if (!token) { $('err').innerHTML = 'Missing key: open kindle.html#k=YOUR_KEY'; return; }
+  xhr('POST', HUB_CONFIG.supabaseUrl + '/rest/v1/rpc/hub_get', { p_token: token }, function (err, res) {
+    if (err) { $('err').innerHTML = '· offline ·'; return; }
+    $('err').innerHTML = '';
+    data = res;
+    if (!langLocked && res.settings && res.settings.lang) lang = res.settings.lang;
+    render();
+  });
+  xhr('GET', 'https://api.open-meteo.com/v1/forecast?latitude=' + HUB_CONFIG.lat + '&longitude=' + HUB_CONFIG.lon +
+    '&current=temperature_2m,weather_code&daily=temperature_2m_min,temperature_2m_max,weather_code,precipitation_probability_max' +
+    '&timezone=Europe%2FStockholm&forecast_days=2', null, function (err, res) {
+      if (!err) { weather = res; render(); }
+    });
+}
+
+function setLang(l) { lang = l; langLocked = true; try { localStorage.setItem('hubLang', l); } catch (e) {} render(); }
+function showTab(name) { tab = name; render(); }
+
+function render() {
+  var now = new Date(), L = I18N[lang];
+  $('date').innerHTML = esc(L.date(now));
+  var codes = [['zh', '中'], ['en', 'EN'], ['sv', 'SV']], h = '';
+  for (var i = 0; i < codes.length; i++)
+    h += '<a href="javascript:setLang(\'' + codes[i][0] + '\')"' + (codes[i][0] === lang ? ' class="on"' : '') + '>' + codes[i][1] + '</a>';
+  $('lang').innerHTML = h;
+  $('tab-family').innerHTML = L.family; $('tab-fridge').innerHTML = L.fridge;
+  $('tab-family').className = tab === 'family' ? 'on' : '';
+  $('tab-fridge').className = tab === 'fridge' ? 'on' : '';
+  $('view-family').style.display = tab === 'family' ? 'block' : 'none';
+  $('view-fridge').style.display = tab === 'fridge' ? 'block' : 'none';
+  if (tab === 'family') renderFamily(now, L); else renderFridge(L);
+  renderIdleClock(now, L);
+}
+
+// After 17:00 the family tab looks ahead to tomorrow
+function targetDay(now) {
+  var d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var ahead = now.getHours() >= 17;
+  if (ahead) d.setDate(d.getDate() + 1);
+  return { date: d, ahead: ahead };
+}
+
+function renderFamily(now, L) {
+  var td = targetDay(now), idx = td.ahead ? 1 : 0, h = '';
+  // Weather
+  var temp = '–', wxLine = '', wear = [];
+  if (weather) {
+    var dly = weather.daily, low = dly.temperature_2m_min[idx], high = dly.temperature_2m_max[idx];
+    var grp = wxGroup(td.ahead ? dly.weather_code[1] : weather.current.weather_code);
+    temp = Math.round(td.ahead ? high : weather.current.temperature_2m) + '°';
+    wxLine = (td.ahead ? L.tomorrowLabel + ' · ' : '') + L.wx[grp] + ' · Stockholm · ' + L.low + ' ' + Math.round(low) + '°';
+    wear = clothes(lang, low, grp, dly.precipitation_probability_max[idx] || 0);
+  }
+  h += '<table style="margin-top:44px"><tr><td><div class="temp">' + temp + '</div><div class="wx">' + esc(wxLine) + '</div></td>';
+  h += '<td style="width:46%" class="r"><div class="label">' + (td.ahead ? L.wearTomorrow : L.wear) + '</div>';
+  h += '<div class="wear" style="margin-top:8px">' + esc(wear.join('\n')).replace(/\n/g, '<br>') + '</div></td></tr></table>';
+  h += '<div class="rule"></div>';
+
+  if (data) {
+    // Kids' schedules
+    var kids = [], wd = (td.date.getDay() + 6) % 7 + 1;
+    for (var i = 0; i < data.members.length; i++) if (data.members[i].role === 'kid') kids.push(data.members[i]);
+    h += '<table><tr>';
+    for (var k = 0; k < kids.length; k++) {
+      var s = null;
+      for (var j = 0; j < data.schedule.length; j++)
+        if (data.schedule[j].member_id === kids[k].id && data.schedule[j].weekday === wd) s = data.schedule[j];
+      h += '<td style="width:' + Math.floor(100 / kids.length) + '%;' + (k > 0 ? 'padding-left:40px' : '') + '">';
+      h += '<div class="kidname">' + esc(kids[k].name) + '</div>';
+      if (s && (s.start_time || s.end_time)) {
+        h += '<div class="kidtime">' + (s.start_time || '').substr(0, 5) + ' – ' + (s.end_time || '').substr(0, 5) + '</div>';
+        h += '<div class="kidcls">' + esc(s.classes || '').replace(/\n/g, '<br>') + '</div>';
+      } else {
+        h += '<div class="kidtime">' + L.noSchool + '</div>';
+      }
+      h += '</td>';
+    }
+    h += '</tr></table><div class="rule"></div>';
+
+    // Drop-off / pick-up
+    var day = ymd(td.date), rides = { dropoff: null, pickup: null };
+    for (var r = 0; r < data.duties.length; r++) if (data.duties[r].day === day) rides[data.duties[r].kind] = data.duties[r];
+    h += '<div class="label">' + (td.ahead ? L.ridesTomorrow : L.rides) + '</div><table style="margin-top:8px">';
+    var kinds = ['dropoff', 'pickup'];
+    for (var q = 0; q < 2; q++) {
+      var row = rides[kinds[q]], def = data.settings[kinds[q] === 'dropoff' ? 'default_dropoff' : 'default_pickup'];
+      var who = row && row.person ? row.person : (def || '–'), note = row && row.note ? row.note : '';
+      h += '<tr class="ride"><td class="ride">' + L[kinds[q]] + '</td><td class="ride who">' +
+        (note ? '<span class="inv">' + esc(who) + ' · ' + esc(note) + '</span>' : esc(who)) + '</td></tr>';
+    }
+    h += '</table>';
+  }
+  $('view-family').innerHTML = h;
+}
+
+function renderFridge(L) {
+  if (!data) { $('view-fridge').innerHTML = ''; return; }
+  var today = data.today, urgent = [], soon = [], later = [];
+  for (var i = 0; i < data.fridge.length; i++) {
+    var f = data.fridge[i], n = daysBetween(today, f.expires);
+    f._n = n;
+    if (n <= 1) urgent.push(f); else if (n <= 3) soon.push(f); else later.push(f);
+  }
+  function when(f) {
+    var s;
+    if (f._n < 0) s = t(lang, 'expired', { n: -f._n });
+    else if (f._n === 0) s = L.today;
+    else if (f._n === 1) s = L.tomorrow;
+    else if (f._n <= 3) s = t(lang, 'days', { n: f._n });
+    else s = f.expires.substr(5, 2) + '/' + f.expires.substr(8, 2);
+    return s + (f.estimated && f._n <= 3 ? '<span class="est">· ' + L.est + '</span>' : '');
+  }
+  var h = '<table style="margin-top:44px"><tr><td class="h1">' + L.fridge + '</td>';
+  h += '<td class="r" style="vertical-align:bottom;font-size:16px;padding-bottom:10px">' +
+    (data.fridge.length ? t(lang, 'count', { n: data.fridge.length, m: urgent.length + soon.length }) : L.fridgeEmpty) + '</td></tr></table>';
+
+  if (urgent.length) {
+    h += '<div class="label" style="margin-top:36px">' + L.urgent + '</div><div class="blk"><table>';
+    for (var a = 0; a < Math.min(urgent.length, 4); a++)
+      h += '<tr><td><b>' + esc(urgent[a].name) + '</b></td><td class="r">' + when(urgent[a]) + '</td></tr>';
+    if (urgent.length > 4) h += '<tr><td colspan="2">' + t(lang, 'more', { n: urgent.length - 4 }) + '</td></tr>';
+    h += '</table></div>';
+  }
+  if (soon.length) {
+    h += '<div class="label" style="margin-top:36px">' + L.soon + '</div><table>';
+    for (var b = 0; b < Math.min(soon.length, 5); b++)
+      h += '<tr class="row"><td><b>' + esc(soon[b].name) + '</b></td><td class="r">' + when(soon[b]) + '</td></tr>';
+    h += '</table>';
+  }
+  if (later.length) {
+    var max = Math.min(later.length, 10), half = Math.ceil(max / 2);
+    h += '<div class="label" style="margin-top:36px">' + L.later + '</div><table><tr>';
+    for (var col = 0; col < 2; col++) {
+      h += '<td style="width:50%;' + (col ? 'padding-left:24px' : 'padding-right:24px') + '"><table>';
+      for (var c = col * half; c < Math.min(max, (col + 1) * half); c++)
+        h += '<tr class="row2"><td>' + esc(later[c].name) + '</td><td class="r">' + when(later[c]) + '</td></tr>';
+      h += '</table></td>';
+    }
+    h += '</tr></table>';
+    if (later.length > max) h += '<div class="label" style="margin-top:8px">' + t(lang, 'more', { n: later.length - max }) + '</div>';
+  }
+  $('view-fridge').innerHTML = h;
+}
+
+// ---- Idle ink painting ----
+function renderIdleClock(now, L) {
+  var m = now.getMinutes();
+  $('idleTime').innerHTML = now.getHours() + ':' + (m < 10 ? '0' : '') + m;
+  var w = weather ? ' · ' + Math.round(weather.current.temperature_2m) + '° ' + L.wx[wxGroup(weather.current.weather_code)] : '';
+  $('idleDate').innerHTML = esc(L.date(now) + w);
+}
+function showPainting() {
+  if (!window.GALLERY || !GALLERY.length) return;
+  $('idle').style.backgroundImage = 'url(' + GALLERY[galleryIdx % GALLERY.length] + ')';
+}
+function sleepToPainting() {
+  idle = true; galleryIdx = Math.floor(Math.random() * 1000);
+  showPainting();
+  $('idle').style.display = 'block';
+}
+function wake() {
+  idle = false; lastTouch = new Date().getTime();
+  $('idle').style.display = 'none';
+  load();
+}
+function touched() { lastTouch = new Date().getTime(); }
+document.addEventListener('touchstart', touched, false);
+document.addEventListener('click', touched, false);
+
+var tick = 0;
+setInterval(function () {
+  tick++;
+  var now = new Date();
+  if (!idle && now.getTime() - lastTouch > HUB_CONFIG.idleMinutes * 60000) sleepToPainting();
+  if (idle && tick % HUB_CONFIG.galleryMinutes === 0) { galleryIdx++; showPainting(); }
+  if (tick % HUB_CONFIG.refreshMinutes === 0) load(); else render();
+  if (tick >= 360) location.reload(); // full reload every 6 h keeps the old browser healthy
+}, 60000);
+
+load();
+render();
+</script>
+</body>
+</html>

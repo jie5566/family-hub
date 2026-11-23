@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Family Hub">
+<meta name="theme-color" content="#F5F4F0">
+<title>Family Hub</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,300;6..12,400;6..12,600&display=swap">
+<style>
+:root { --ink: #111; --paper: #F5F4F0; --mute: #5a5955; --line: #111; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); }
+body { font-family: 'Avenir Next', 'Avenir', 'Nunito Sans', 'PingFang SC', 'Noto Sans SC', sans-serif; font-size: 17px;
+  padding: max(20px, env(safe-area-inset-top)) 24px calc(96px + env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
+header { display: flex; justify-content: space-between; align-items: baseline; margin: 12px 0 36px; }
+h1 { font-size: 40px; font-weight: 300; margin: 0; letter-spacing: .02em; }
+.lang button { background: none; border: 0; font: inherit; font-size: 14px; color: var(--mute); padding: 8px 6px; letter-spacing: .08em; }
+.lang button.on { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 5px; }
+.label { font-size: 12px; letter-spacing: .2em; color: var(--mute); text-transform: uppercase; margin: 32px 0 10px; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #d8d6cf; }
+.row .name { font-weight: 600; }
+.row .meta { color: var(--mute); font-size: 15px; }
+.hot { background: var(--ink); color: var(--paper); padding: 2px 10px; }
+button.act { background: none; border: 1px solid var(--ink); color: var(--ink); font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 999px; white-space: nowrap; }
+button.primary { background: var(--ink); color: var(--paper); border: 0; font: inherit; font-weight: 600; padding: 14px 20px; border-radius: 999px; width: 100%; margin-top: 18px; }
+form, .card { display: grid; gap: 12px; }
+label.f { display: grid; gap: 6px; font-size: 13px; color: var(--mute); letter-spacing: .04em; }
+input, select, textarea { font: inherit; font-size: 16px; color: var(--ink); background: #fff; border: 1px solid #cfccc4; border-radius: 10px; padding: 11px 12px; width: 100%; }
+textarea { min-height: 52px; resize: vertical; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.check { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+.check input { width: 20px; height: 20px; accent-color: #111; }
+.seg { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg button { background: none; border: 1px solid var(--ink); font: inherit; padding: 8px 16px; border-radius: 999px; }
+.seg button.on { background: var(--ink); color: var(--paper); }
+.day { padding: 16px 0; border-bottom: 1px solid #d8d6cf; display: grid; gap: 10px; }
+.day b { font-size: 15px; letter-spacing: .06em; }
+nav { position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom); }
+nav button { background: none; border: 0; font: inherit; font-size: 15px; letter-spacing: .1em; padding: 18px 0; color: var(--mute); }
+nav button.on { color: var(--ink); font-weight: 600; }
+.toast { position: fixed; left: 50%; bottom: 110px; transform: translateX(-50%); background: var(--ink); color: var(--paper);
+  padding: 10px 18px; border-radius: 999px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.empty { color: var(--mute); padding: 24px 0; }
+code { font-size: 13px; word-break: break-all; background: #fff; padding: 10px; display: block; border-radius: 8px; border: 1px solid #cfccc4; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title"></h1>
+  <div class="lang" id="lang"></div>
+</header>
+<main id="main"></main>
+<nav id="nav"></nav>
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="i18n.js"></script>
+<script>
+const UI = {
+  zh: { tabs: ['冰箱', '课表', '接送', '设置'], add: '添加食材', name: '名称', category: '类别', expires: '保质期到', estimated: '没有印日期（估计）',
+        save: '保存', done: '吃完了', saved: '已保存', removed: '已删除', kid: '孩子', start: '上学', end: '放学', classes: '课程（可换行）',
+        dropoff: '早上送', pickup: '下午接', note: '备注，如“爸爸今天不行”', members: '家庭成员', parent: '家长', child: '孩子',
+        defaults: '默认接送', kindleLang: 'Kindle 默认语言', kindleLink: 'Kindle 打开这个地址', copy: '复制', copied: '已复制',
+        noKey: '请用带钥匙的链接打开：app.html#k=…', defaultHint: '留空 = 默认', items: '冰箱里' },
+  en: { tabs: ['Fridge', 'Classes', 'Rides', 'Settings'], add: 'Add food', name: 'Name', category: 'Category', expires: 'Best before',
+        estimated: 'No printed date (estimate)', save: 'Save', done: 'Eaten', saved: 'Saved', removed: 'Removed', kid: 'Child',
+        start: 'Start', end: 'End', classes: 'Classes (one per line)', dropoff: 'Drop-off', pickup: 'Pick-up',
+        note: 'Note, e.g. "Dad can’t today"', members: 'Family', parent: 'Parent', child: 'Child', defaults: 'Default rides',
+        kindleLang: 'Kindle default language', kindleLink: 'Open this on the Kindle', copy: 'Copy', copied: 'Copied',
+        noKey: 'Open with your key link: app.html#k=…', defaultHint: 'empty = default', items: 'In the fridge' },
+  sv: { tabs: ['Kyl', 'Schema', 'Skjuts', 'Inställn.'], add: 'Lägg till', name: 'Namn', category: 'Kategori', expires: 'Bäst före',
+        estimated: 'Inget datum (uppskattat)', save: 'Spara', done: 'Uppätet', saved: 'Sparat', removed: 'Borttaget', kid: 'Barn',
+        start: 'Börjar', end: 'Slutar', classes: 'Lektioner (en per rad)', dropoff: 'Lämnar', pickup: 'Hämtar',
+        note: 'Anteckning, t.ex. "Pappa kan inte idag"', members: 'Familj', parent: 'Förälder', child: 'Barn', defaults: 'Standard skjuts',
+        kindleLang: 'Kindlens språk', kindleLink: 'Öppna detta på Kindlen', copy: 'Kopiera', copied: 'Kopierat',
+        noKey: 'Öppna med din nyckellänk: app.html#k=…', defaultHint: 'tomt = standard', items: 'I kylskåpet' }
+};
+
+// Key: from #k=… on first open, then remembered on this phone
+let token = (location.hash.match(/k=([0-9a-f]+)/) || [])[1];
+if (token) { localStorage.setItem('hubToken', token); history.replaceState(null, '', location.pathname); }
+token = token || localStorage.getItem('hubToken') || '';
+
+let lang = localStorage.getItem('hubAppLang') || 'zh';
+let tab = +(localStorage.getItem('hubAppTab') || 0);
+let data = null, kidSel = null;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const U = () => UI[lang];
+
+async function rpc(fn, args) {
+  const r = await fetch(`${HUB_CONFIG.supabaseUrl}/rest/v1/rpc/${fn}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', apikey: HUB_CONFIG.supabaseKey },
+    body: JSON.stringify({ p_token: token, ...args })
+  });
+  if (!r.ok) throw new Error(await r.text());
+  const txt = await r.text();
+  return txt ? JSON.parse(txt) : null;
+}
+function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1400); }
+async function reload() { data = await rpc('hub_get', {}); render(); }
+
+function render() {
+  document.documentElement.lang = lang;
+  $('title').textContent = U().tabs[tab];
+  $('lang').innerHTML = [['zh', '中'], ['en', 'EN'], ['sv', 'SV']]
+    .map(([c, l]) => `<button class="${c === lang ? 'on' : ''}" onclick="setLang('${c}')">${l}</button>`).join('');
+  $('nav').innerHTML = U().tabs.map((l, i) => `<button class="${i === tab ? 'on' : ''}" onclick="setTab(${i})">${l}</button>`).join('');
+  if (!token) { $('main').innerHTML = `<p class="empty">${U().noKey}</p>`; return; }
+  if (!data) { $('main').innerHTML = ''; return; }
+  [renderFridge, renderClasses, renderRides, renderSettings][tab]();
+}
+function setLang(l) { lang = l; localStorage.setItem('hubAppLang', l); render(); }
+function setTab(i) { tab = i; localStorage.setItem('hubAppTab', i); window.scrollTo(0, 0); render(); }
+
+// ---------- Fridge ----------
+function plusDays(n) { const d = new Date(); d.setDate(d.getDate() + n); return ymd(d); }
+function renderFridge() {
+  const L = I18N[lang], cats = Object.keys(SHELF_DAYS);
+  const items = data.fridge.map((f) => ({ ...f, n: daysBetween(data.today, f.expires) }));
+  const whenTxt = (f) => f.n < 0 ? t(lang, 'expired', { n: -f.n }) : f.n === 0 ? L.today : f.n === 1 ? L.tomorrow
+    : f.n <= 3 ? t(lang, 'days', { n: f.n }) : f.expires.slice(5).replace('-', '/');
+  $('main').innerHTML = `
+    <form onsubmit="addFood(event)">
+      <label class="f">${U().name}<input id="fName" required autocomplete="off"></label>
+      <div class="two">
+        <label class="f">${U().category}<select id="fCat" onchange="catChanged()">${cats.map((c) => `<option value="${c}">${L.cat[c]}</option>`).join('')}</select></label>
+        <label class="f">${U().expires}<input id="fDate" type="date" onchange="$('fEst').checked=false"></label>
+      </div>
+      <label class="check"><input type="checkbox" id="fEst" checked> ${U().estimated}</label>
+      <button class="primary">${U().add}</button>
+    </form>
+    <div class="label">${U().items} · ${items.length}</div>
+    ${items.length ? items.map((f) => `
+      <div class="row">
+        <div><div class="name">${esc(f.name)}</div>
+          <div class="meta">${f.n <= 1 ? `<span class="hot">${whenTxt(f)}</span>` : whenTxt(f)}${f.estimated ? ' · ' + L.est : ''} · ${L.cat[f.category] || ''}</div></div>
+        <button class="act" onclick="removeFood('${f.id}')">${U().done}</button>
+      </div>`).join('') : `<p class="empty">${L.fridgeEmpty}</p>`}`;
+  catChanged();
+}
+function catChanged() { $('fDate').value = plusDays(SHELF_DAYS[$('fCat').value]); $('fEst').checked = true; }
+async function addFood(e) {
+  e.preventDefault();
+  await rpc('hub_fridge_add', { p_name: $('fName').value.trim(), p_category: $('fCat').value, p_expires: $('fDate').value, p_estimated: $('fEst').checked });
+  toast(U().saved); await reload();
+}
+async function removeFood(id) { await rpc('hub_fridge_remove', { p_id: id }); toast(U().removed); await reload(); }
+
+// ---------- Classes ----------
+function renderClasses() {
+  const kids = data.members.filter((m) => m.role === 'kid');
+  if (!kidSel || !kids.find((k) => k.id === kidSel)) kidSel = kids[0]?.id;
+  const wd = I18N[lang].wd;
+  const days = [1, 2, 3, 4, 5, 6, 7].map((d) => {
+    const s = data.schedule.find((x) => x.member_id === kidSel && x.weekday === d) || {};
+    return `<div class="day"><b>${wd[d - 1]}</b>
+      <div class="two"><label class="f">${U().start}<input type="time" id="s${d}" value="${(s.start_time || '').slice(0, 5)}"></label>
+      <label class="f">${U().end}<input type="time" id="e${d}" value="${(s.end_time || '').slice(0, 5)}"></label></div>
+      <label class="f">${U().classes}<textarea id="c${d}">${esc(s.classes || '')}</textarea></label></div>`;
+  }).join('');
+  $('main').innerHTML = `<div class="seg">${kids.map((k) => `<button class="${k.id === kidSel ? 'on' : ''}" onclick="kidSel='${k.id}';render()">${esc(k.name)}</button>`).join('')}</div>
+    ${days}<button class="primary" onclick="saveClasses()">${U().save}</button>`;
+}
+async function saveClasses() {
+  for (let d = 1; d <= 7; d++) {
+    await rpc('hub_schedule_save', { p_member: kidSel, p_weekday: d, p_start: $('s' + d).value || null, p_end: $('e' + d).value || null, p_classes: $('c' + d).value.trim() });
+  }
+  toast(U().saved); await reload();
+}
+
+// ---------- Rides ----------
+function renderRides() {
+  const parents = data.members.filter((m) => m.role === 'parent').map((m) => m.name);
+  const wd = I18N[lang].wd, s = data.settings;
+  let html = `<datalist id="ppl">${parents.map((p) => `<option value="${esc(p)}">`).join('')}</datalist>`;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() + i); const day = ymd(d);
+    const get = (k) => data.duties.find((x) => x.day === day && x.kind === k) || {};
+    const a = get('dropoff'), b = get('pickup');
+    html += `<div class="day"><b>${i === 0 ? I18N[lang].today : i === 1 ? I18N[lang].tomorrow : wd[(d.getDay() + 6) % 7]} · ${d.getDate()}/${d.getMonth() + 1}</b>
+      <div class="two">
+        <label class="f">${U().dropoff}<input list="ppl" id="d${i}" value="${esc(a.person || '')}" placeholder="${esc(s.default_dropoff || '')}"></label>
+        <label class="f">${U().pickup}<input list="ppl" id="p${i}" value="${esc(b.person || '')}" placeholder="${esc(s.default_pickup || '')}"></label>
+      </div>
+      <input id="n${i}" value="${esc(b.note || a.note || '')}" placeholder="${esc(U().note)}"></div>`;
+  }
+  $('main').innerHTML = html + `<button class="primary" onclick="saveRides()">${U().save}</button>`;
+}
+async function saveRides() {
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(); d.setDate(d.getDate() + i); const day = ymd(d), note = $('n' + i).value.trim();
+    const drop = $('d' + i).value.trim(), pick = $('p' + i).value.trim();
+    await rpc('hub_duty_set', { p_day: day, p_kind: 'dropoff', p_person: drop || null, p_note: null });
+    // The note is shown next to the pick-up person; fall back to the default name so it still appears
+    await rpc('hub_duty_set', { p_day: day, p_kind: 'pickup', p_person: pick || (note ? data.settings.default_pickup : null), p_note: note || null });
+  }
+  toast(U().saved); await reload();
+}
+
+// ---------- Settings ----------
+function renderSettings() {
+  const s = data.settings, link = location.origin + location.pathname.replace(/app\.html$/, '') + 'kindle.html#k=' + token;
+  $('main').innerHTML = `
+    <div class="label">${U().members}</div>
+    <div class="card">${data.members.map((m) => `<div class="two">
+      <input id="m_${m.id}" value="${esc(m.name)}">
+      <select id="r_${m.id}"><option value="parent" ${m.role === 'parent' ? 'selected' : ''}>${U().parent}</option>
+        <option value="kid" ${m.role === 'kid' ? 'selected' : ''}>${U().child}</option></select></div>`).join('')}</div>
+    <div class="label">${U().defaults}</div>
+    <div class="two"><label class="f">${U().dropoff}<input id="defD" value="${esc(s.default_dropoff || '')}"></label>
+      <label class="f">${U().pickup}<input id="defP" value="${esc(s.default_pickup || '')}"></label></div>
+    <div class="label">${U().kindleLang}</div>
+    <select id="kLang">${[['zh', '中文'], ['en', 'English'], ['sv', 'Svenska']].map(([c, l]) => `<option value="${c}" ${s.lang === c ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    <button class="primary" onclick="saveSettings()">${U().save}</button>
+    <div class="label">${U().kindleLink}</div>
+    <code id="klink">${esc(link)}</code>
+    <button class="act" style="margin-top:10px" onclick="navigator.clipboard.writeText($('klink').textContent);toast(U().copied)">${U().copy}</button>`;
+}
+async function saveSettings() {
+  for (const m of data.members) {
+    await rpc('hub_member_save', { p_id: m.id, p_name: $('m_' + m.id).value.trim() || m.name, p_role: $('r_' + m.id).value, p_sort: m.sort });
+  }
+  await rpc('hub_settings_save', { p_lang: $('kLang').value, p_default_dropoff: $('defD').value.trim(), p_default_pickup: $('defP').value.trim() });
+  toast(U().saved); await reload();
+}
+
+render();
+if (token) reload().catch((e) => { $('main').innerHTML = `<p class="empty">${esc(e.message)}</p>`; });
+</script>
+</body>
+</html>
