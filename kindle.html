@@ -337,6 +337,11 @@ function clearGhosting() {
   setTimeout(function () { document.body.removeChild(f); }, 600);
 }
 
+// Idle check every 15 s, so the painting appears close to the set time (this does not redraw anything)
+setInterval(function () {
+  if (!idle && new Date().getTime() - lastTouch > HUB_CONFIG.idleMinutes * 60000) sleepToPainting();
+}, 15000);
+
 var lastLoad = new Date().getTime(), lastPainting = lastLoad, lastEvery = -1;
 setInterval(function () {
   var now = new Date(), ms = now.getTime(), every = refreshEvery(now);

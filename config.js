@@ -5,7 +5,7 @@ var HUB_CONFIG = {
   supabaseKey: 'sb_publishable_7UU2QHoKzId-Q5V_dxm2-Q_tcQ5qJ6-',
   lat: 59.3293,
   lon: 18.0686,
-  idleMinutes: 3,          // Kindle: switch to ink painting after this many idle minutes
+  idleMinutes: 1,          // Kindle: switch to ink painting after this many idle minutes
   // Power saving: the screen only redraws when something actually changed.
   // Data is fetched often only in the windows when the family looks at it.
   activeWindows: [['06:30', '09:00'], ['15:00', '21:00']],
