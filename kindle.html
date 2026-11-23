@@ -71,7 +71,8 @@ td { padding: 0; vertical-align: top; }
 <script src="i18n.js"></script>
 <script src="gallery/list.js"></script>
 <script>
-var token = (location.hash.match(/k=([0-9a-z]+)/) || [])[1] || '';
+// The key can arrive as #k=KEY or ?k=KEY (old Kindle browsers may drop the # part on redirects)
+var token = ((location.hash + '&' + location.search).match(/k=([0-9a-z]+)/) || [])[1] || '';
 // Remember the key, so a plain bookmark of kindle.html keeps working
 try { if (token) localStorage.setItem('hubToken', token); else token = localStorage.getItem('hubToken') || ''; } catch (e) {}
 var lang = 'zh', langLocked = false, tab = 'family', data = null, weather = null;
@@ -102,7 +103,7 @@ function xhr(method, url, body, cb) {
 }
 
 function load() {
-  if (!token) { $('err').innerHTML = 'Missing key: open kindle.html#k=YOUR_KEY'; return; }
+  if (!token) { askKey(); return; }
   xhr('POST', HUB_CONFIG.supabaseUrl + '/rest/v1/rpc/hub_get', { p_token: token }, function (err, res) {
     if (err) { put('err', '· offline ·'); return; }
     put('err', '');
@@ -119,6 +120,19 @@ function load() {
 
 function checkin(id) {
   xhr('POST', HUB_CONFIG.supabaseUrl + '/rest/v1/rpc/hub_checkin_toggle', { p_token: token, p_member: id }, function () { load(); });
+}
+
+// First run without a key: type it once, it is remembered on this Kindle
+function askKey() {
+  put('err', '<div style="padding:60px 0 30px;font-size:24px">家庭钥匙 · Family key</div>' +
+    '<input id="keyIn" type="text" autocapitalize="off" autocorrect="off" style="font-size:28px;width:70%;padding:12px;border:2px solid #000">' +
+    ' <a href="javascript:saveKey()" style="font-size:24px;padding:14px 22px;background:#000;color:#fff;text-decoration:none">OK</a>');
+}
+function saveKey() {
+  var v = ($('keyIn').value || '').replace(/[^0-9a-zA-Z]/g, '').toLowerCase();
+  if (v.length < 10) return;
+  token = v; try { localStorage.setItem('hubToken', v); } catch (e) {}
+  put('err', ''); load();
 }
 
 function setLang(l) { lang = l; langLocked = true; try { localStorage.setItem('hubLang', l); } catch (e) {} render(); }

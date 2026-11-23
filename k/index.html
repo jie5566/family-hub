@@ -3,7 +3,7 @@
 <body>
 <script>
 // Short Kindle address: .../family-hub/k#KEY  ->  kindle.html#k=KEY
-var key = location.hash.replace(/^#(k=)?/, '');
-location.replace('../kindle.html' + (key ? '#k=' + key : ''));
+var key = (location.hash || location.search).replace(/^[#?](k=)?/, '');
+location.replace('../kindle.html' + (key ? '?k=' + key : ''));
 </script>
 </body></html>
