@@ -88,3 +88,39 @@ function daysBetween(a, b) { return Math.round((parseYmd(b) - parseYmd(a)) / 864
 
 // Default shelf life (days) per category, used when a package has no printed date
 var SHELF_DAYS = { veg: 4, fruit: 5, meat: 2, fish: 1, dairy: 7, cooked: 3, other: 7 };
+
+// School subjects: stored once (in any language), shown in the screen's language.
+// Each row: [中文, English, Svenska, ...other spellings that mean the same subject]
+var SUBJECTS = [
+  ['瑞典语', 'Swedish', 'Svenska', 'SV'],
+  ['数学', 'Maths', 'Matematik', 'MA', 'Math'],
+  ['英语', 'English', 'Engelska', 'ENG', 'EN'],
+  ['社会', 'Social studies', 'SO'],
+  ['自然科技', 'Science & tech', 'NV/TK', 'NO/TK'],
+  ['自然', 'Science', 'NV', 'NO'],
+  ['音乐', 'Music', 'Musik', 'MU'],
+  ['体育', 'PE', 'Idrott', 'ID', 'Idrott och hälsa'],
+  ['美术', 'Art', 'Bild'],
+  ['手工', 'Crafts', 'Slöjd'],
+  ['班会', 'Class time', 'Klasstid', 'Mentorstid'],
+  ['学习工坊', 'Workshop', 'Skolverkstad'],
+  ['午饭', 'Lunch', 'Lunch'],
+  ['课后托管', 'After-school care', 'Fritids']
+];
+function trSubject(lang, word) {
+  var col = lang === 'en' ? 1 : lang === 'sv' ? 2 : 0, w = word.replace(/^\s+|\s+$/g, ''), lw = w.toLowerCase();
+  for (var i = 0; i < SUBJECTS.length; i++)
+    for (var j = 0; j < SUBJECTS[i].length; j++)
+      if (SUBJECTS[i][j].toLowerCase() === lw) return SUBJECTS[i][col];
+  return w; // unknown words are shown as typed
+}
+// "瑞典语 · 数学\n英语" -> "Svenska · Matematik\nEngelska"
+function trSubjects(lang, text) {
+  var lines = String(text || '').split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var parts = lines[i].split(/\s*[·,，、]\s*/);
+    for (var j = 0; j < parts.length; j++) parts[j] = trSubject(lang, parts[j]);
+    lines[i] = parts.join(' · ');
+  }
+  return lines.join('\n');
+}

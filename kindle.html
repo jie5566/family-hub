@@ -191,7 +191,7 @@ function renderFamily(now, L) {
       h += '<div class="kidname">' + esc(kids[k].name) + '</div>';
       if (s && (s.start_time || s.end_time)) {
         h += '<div class="kidtime">' + (s.start_time || '').substr(0, 5) + ' – ' + (s.end_time || '').substr(0, 5) + '</div>';
-        h += '<div class="kidcls">' + esc(s.classes || '').replace(/\n/g, '<br>') + '</div>';
+        h += '<div class="kidcls">' + esc(trSubjects(lang, s.classes)).replace(/\n/g, '<br>') + '</div>';
       } else {
         h += '<div class="kidtime">' + L.noSchool + '</div>';
       }
