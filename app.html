@@ -70,24 +70,24 @@ const UI = {
         save: '保存', done: '吃完了', saved: '已保存', removed: '已删除', kid: '孩子', start: '上学', end: '放学', classes: '课程（可换行）', activity: '课外班，如“16:30 游泳”',
         dropoff: '早上送', pickup: '下午接', note: '备注，如“爸爸今天不行”', members: '家庭成员', parent: '家长', child: '孩子',
         defaults: '默认接送', kindleLang: 'Kindle 默认语言', kindleLink: 'Kindle 打开这个地址', copy: '复制', copied: '已复制',
-        noKey: '请用带钥匙的链接打开：app.html#k=…', defaultHint: '留空 = 默认', items: '冰箱里' },
+        noKey: '', keyLabel: '家庭钥匙', defaultHint: '留空 = 默认', items: '冰箱里' },
   en: { tabs: ['Fridge', 'Classes', 'Rides', 'Settings'], add: 'Add food', name: 'Name', category: 'Category', expires: 'Best before',
         estimated: 'No printed date (estimate)', save: 'Save', done: 'Eaten', saved: 'Saved', removed: 'Removed', kid: 'Child',
         start: 'Start', end: 'End', classes: 'Classes (one per line)', activity: 'After school, e.g. "16:30 Swimming"', dropoff: 'Drop-off', pickup: 'Pick-up',
         note: 'Note, e.g. "Dad can’t today"', members: 'Family', parent: 'Parent', child: 'Child', defaults: 'Default rides',
         kindleLang: 'Kindle default language', kindleLink: 'Open this on the Kindle', copy: 'Copy', copied: 'Copied',
-        noKey: 'Open with your key link: app.html#k=…', defaultHint: 'empty = default', items: 'In the fridge' },
+        noKey: '', keyLabel: 'Family key', defaultHint: 'empty = default', items: 'In the fridge' },
   sv: { tabs: ['Kyl', 'Schema', 'Skjuts', 'Inställn.'], add: 'Lägg till', name: 'Namn', category: 'Kategori', expires: 'Bäst före',
         estimated: 'Inget datum (uppskattat)', save: 'Spara', done: 'Uppätet', saved: 'Sparat', removed: 'Borttaget', kid: 'Barn',
         start: 'Börjar', end: 'Slutar', classes: 'Lektioner (en per rad)', activity: 'Efter skolan, t.ex. "16:30 Simning"', dropoff: 'Lämnar', pickup: 'Hämtar',
         note: 'Anteckning, t.ex. "Pappa kan inte idag"', members: 'Familj', parent: 'Förälder', child: 'Barn', defaults: 'Standard skjuts',
         kindleLang: 'Kindlens språk', kindleLink: 'Öppna detta på Kindlen', copy: 'Kopiera', copied: 'Kopierat',
-        noKey: 'Öppna med din nyckellänk: app.html#k=…', defaultHint: 'tomt = standard', items: 'I kylskåpet' }
+        noKey: '', keyLabel: 'Familjenyckel', defaultHint: 'tomt = standard', items: 'I kylskåpet' }
 };
 
 // Key: from #k=… on first open, then remembered on this phone
 let token = (location.hash.match(/k=([0-9a-z]+)/) || [])[1];
-if (token) { localStorage.setItem('hubToken', token); history.replaceState(null, '', location.pathname); }
+if (token) localStorage.setItem('hubToken', token);
 token = token || localStorage.getItem('hubToken') || '';
 
 let lang = localStorage.getItem('hubAppLang') || 'zh';
@@ -115,7 +115,12 @@ function render() {
   $('lang').innerHTML = [['zh', '中'], ['en', 'EN'], ['sv', 'SV']]
     .map(([c, l]) => `<button class="${c === lang ? 'on' : ''}" onclick="setLang('${c}')">${l}</button>`).join('');
   $('nav').innerHTML = U().tabs.map((l, i) => `<button class="${i === tab ? 'on' : ''}" onclick="setTab(${i})">${l}</button>`).join('');
-  if (!token) { $('main').innerHTML = `<p class="empty">${U().noKey}</p>`; return; }
+  if (!token) {
+    $('main').innerHTML = `<form onsubmit="event.preventDefault();token=$('keyIn').value.trim().toLowerCase();localStorage.setItem('hubToken',token);history.replaceState(null,'','#k='+token);reload().catch(()=>{});">
+      <label class="f">${U().keyLabel}<input id="keyIn" autocapitalize="off" autocorrect="off" autocomplete="off"></label>
+      <button class="primary">OK</button></form>`;
+    return;
+  }
   if (!data) { $('main').innerHTML = ''; return; }
   [renderFridge, renderClasses, renderRides, renderSettings][tab]();
 }
@@ -215,7 +220,7 @@ async function saveRides() {
 
 // ---------- Settings ----------
 function renderSettings() {
-  const s = data.settings, link = location.origin + location.pathname.replace(/app\.html$/, '') + 'kindle.html#k=' + token;
+  const s = data.settings, link = location.origin + location.pathname.replace(/app\.html$/, '') + 'kindle.html?k=' + token;
   $('main').innerHTML = `
     <div class="label">${U().members}</div>
     <div class="card">${data.members.map((m) => `<div class="two">
