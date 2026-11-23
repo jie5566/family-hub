@@ -124,3 +124,32 @@ function trSubjects(lang, text) {
   }
   return lines.join('\n');
 }
+
+// Common foods: typed once in any language, shown in the screen's language.
+// Each row: [中文, English, Svenska, ...other spellings]
+var FOODS = [
+  ['菠菜', 'Spinach', 'Spenat'], ['香菜', 'Coriander', 'Koriander', '芫荽', 'Cilantro'], ['黄瓜', 'Cucumber', 'Gurka'],
+  ['小葱', 'Spring onion', 'Salladslök', '葱', '香葱', 'Scallion'], ['西红柿', 'Tomato', 'Tomat', '番茄'], ['芹菜', 'Celery', 'Selleri', 'Blekselleri'],
+  ['玉米', 'Corn', 'Majs'], ['玉米（真空包装）', 'Corn (vacuum-packed)', 'Majs (vakuumförpackad)'], ['大蒜', 'Garlic', 'Vitlök', '蒜'],
+  ['洋葱', 'Onion', 'Lök', 'Gul lök'], ['红洋葱', 'Red onion', 'Rödlök'], ['土豆', 'Potato', 'Potatis', '马铃薯'], ['胡萝卜', 'Carrot', 'Morot', 'Morötter'],
+  ['生菜', 'Lettuce', 'Sallad'], ['白菜', 'Chinese cabbage', 'Salladskål', '大白菜'], ['卷心菜', 'Cabbage', 'Vitkål', '包菜'],
+  ['西兰花', 'Broccoli', 'Broccoli'], ['花菜', 'Cauliflower', 'Blomkål'], ['彩椒', 'Bell pepper', 'Paprika', '甜椒'], ['蘑菇', 'Mushrooms', 'Champinjoner', 'Svamp'],
+  ['茄子', 'Aubergine', 'Aubergine', 'Eggplant'], ['西葫芦', 'Courgette', 'Zucchini'], ['姜', 'Ginger', 'Ingefära', '生姜'], ['豆角', 'Green beans', 'Haricots verts', '四季豆'],
+  ['豆腐', 'Tofu', 'Tofu'], ['鸡蛋', 'Eggs', 'Ägg', '蛋'], ['牛奶', 'Milk', 'Mjölk', '鲜奶'], ['酸奶', 'Yoghurt', 'Yoghurt', 'Fil', 'Filmjölk'],
+  ['黄油', 'Butter', 'Smör'], ['奶酪', 'Cheese', 'Ost', '芝士'], ['奶油', 'Cream', 'Grädde'],
+  ['鸡肉', 'Chicken', 'Kyckling'], ['鸡胸肉', 'Chicken breast', 'Kycklingfilé'], ['猪肉', 'Pork', 'Fläskkött'], ['牛肉', 'Beef', 'Nötkött'],
+  ['肉末', 'Mince', 'Färs', '绞肉', 'Köttfärs'], ['香肠', 'Sausage', 'Korv'], ['火腿', 'Ham', 'Skinka'], ['培根', 'Bacon', 'Bacon'],
+  ['三文鱼', 'Salmon', 'Lax'], ['鳕鱼', 'Cod', 'Torsk'], ['虾', 'Prawns', 'Räkor'],
+  ['苹果', 'Apple', 'Äpple', 'Äpplen'], ['香蕉', 'Banana', 'Banan'], ['橙子', 'Orange', 'Apelsin'], ['草莓', 'Strawberries', 'Jordgubbar'],
+  ['蓝莓', 'Blueberries', 'Blåbär'], ['葡萄', 'Grapes', 'Vindruvor'], ['梨', 'Pear', 'Päron'], ['柠檬', 'Lemon', 'Citron'], ['牛油果', 'Avocado', 'Avokado'],
+  ['剩菜', 'Leftovers', 'Rester'], ['米饭', 'Rice', 'Ris'], ['面条', 'Noodles', 'Nudlar'], ['面包', 'Bread', 'Bröd'], ['饺子', 'Dumplings', 'Dumplings']
+];
+function trFood(lang, item) {
+  if (lang === 'en' && item.name_en) return item.name_en;
+  if (lang === 'sv' && item.name_sv) return item.name_sv;
+  var col = lang === 'en' ? 1 : lang === 'sv' ? 2 : 0, lw = String(item.name || '').replace(/^\s+|\s+$/g, '').toLowerCase();
+  for (var i = 0; i < FOODS.length; i++)
+    for (var j = 0; j < FOODS[i].length; j++)
+      if (FOODS[i][j].toLowerCase() === lw) return FOODS[i][col];
+  return item.name; // unknown foods are shown as typed
+}

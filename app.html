@@ -186,7 +186,7 @@ function renderFridge() {
     <div class="label">${U().items} · ${items.length}</div>
     ${items.length ? items.map((f) => `
       <div class="row">
-        <div><div class="name">${esc(f.name)}</div>
+        <div><div class="name">${esc(trFood(lang, f))}</div>
           <div class="meta">${f.n <= 1 ? `<span class="hot">${whenTxt(f)}</span>` : whenTxt(f)}${f.estimated ? ' · ' + L.est : ''} · ${L.cat[f.category] || ''}</div></div>
         <button class="act" onclick="removeFood('${f.id}')">${U().done}</button>
       </div>`).join('') : `<p class="empty">${L.fridgeEmpty}</p>`}`;

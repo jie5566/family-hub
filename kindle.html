@@ -266,14 +266,14 @@ function renderFridge(L) {
   if (urgent.length) {
     h += '<div class="label" style="margin-top:30px">' + L.urgent + '</div><div class="blk"><table>';
     for (var a = 0; a < Math.min(urgent.length, 4); a++)
-      h += '<tr><td><b>' + esc(urgent[a].name) + '</b></td><td class="r">' + when(urgent[a]) + '</td></tr>';
+      h += '<tr><td><b>' + esc(trFood(lang, urgent[a])) + '</b></td><td class="r">' + when(urgent[a]) + '</td></tr>';
     if (urgent.length > 4) h += '<tr><td colspan="2">' + t(lang, 'more', { n: urgent.length - 4 }) + '</td></tr>';
     h += '</table></div>';
   }
   if (soon.length) {
     h += '<div class="label" style="margin-top:36px">' + L.soon + '</div><table>';
     for (var b = 0; b < Math.min(soon.length, 4); b++)
-      h += '<tr class="row"><td><b>' + esc(soon[b].name) + '</b></td><td class="r">' + when(soon[b]) + '</td></tr>';
+      h += '<tr class="row"><td><b>' + esc(trFood(lang, soon[b])) + '</b></td><td class="r">' + when(soon[b]) + '</td></tr>';
     h += '</table>';
   }
   if (later.length) {
@@ -282,7 +282,7 @@ function renderFridge(L) {
     for (var col = 0; col < 2; col++) {
       h += '<td style="width:50%;' + (col ? 'padding-left:24px' : 'padding-right:24px') + '"><table>';
       for (var c = col * half; c < Math.min(max, (col + 1) * half); c++)
-        h += '<tr class="row2"><td>' + esc(later[c].name) + '</td><td class="r">' + when(later[c]) + '</td></tr>';
+        h += '<tr class="row2"><td>' + esc(trFood(lang, later[c])) + '</td><td class="r">' + when(later[c]) + '</td></tr>';
       h += '</table></td>';
     }
     h += '</tr></table>';
