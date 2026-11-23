@@ -12,5 +12,5 @@ var HUB_CONFIG = {
   activeRefreshMinutes: 15,   // inside the windows above
   dayRefreshMinutes: 120,     // 09:00–15:00
   // 21:00–06:30: no fetching at all (a tap on the screen still loads fresh data)
-  galleryMinutes: 120         // change painting this often (only while awake hours)
+  galleryMinutes: 15          // change painting this often (not at night)
 };

@@ -83,7 +83,7 @@ var token = ((location.hash + '&' + location.search).match(/k=([0-9a-z]+)/) || [
 // Remember the key, so a plain bookmark of kindle.html keeps working
 try { if (token) localStorage.setItem('hubToken', token); else token = localStorage.getItem('hubToken') || ''; } catch (e) {}
 var lang = 'zh', langLocked = false, tab = 'family', data = null, weather = null;
-var lastTouch = new Date().getTime(), idle = false, galleryIdx = 0;
+var lastTouch = new Date().getTime(), idle = false, galleryIdx = Math.floor(Math.random() * 1000);
 try { var saved = localStorage.getItem('hubLang'); if (saved) { lang = saved; langLocked = true; } } catch (e) {}
 
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -308,7 +308,7 @@ function showPainting() {
   });
 }
 function sleepToPainting() {
-  idle = true; galleryIdx = Math.floor(Math.random() * 1000);
+  idle = true; galleryIdx++; // a different painting every time the screen goes idle
   showPainting();
   $('idle').style.display = 'block';
 }
